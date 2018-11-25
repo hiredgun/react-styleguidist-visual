@@ -16,6 +16,7 @@ const testSchema = joi
     url: joi.string().required(),
     dir: joi.string(),
     filter: joi.array().items(joi.string()),
+    ignore: joi.array().items(joi.string()),
     threshold: joi
       .number()
       .min(0)
@@ -51,11 +52,12 @@ const testDefaults = {
   sandbox: true,
   dir: 'styleguide-visual',
   filter: undefined,
+  ignore: undefined,
   threshold: 0.001,
   wait: 0,
   viewports: {
     desktop: {
-      width: 800,
+      width: 1000,
       height: 600,
       deviceScaleFactor: 1
     }
@@ -71,9 +73,20 @@ async function test (partialOptions) {
 
   try {
     const options = await getOptions(partialOptions, testDefaults, testSchema)
-    const { url, dir, filter, threshold, wait, viewports, launchOptions, connectOptions, navigationOptions } = options
+    const {
+      url,
+      dir,
+      filter,
+      ignore,
+      threshold,
+      wait,
+      viewports,
+      launchOptions,
+      connectOptions,
+      navigationOptions
+    } = options
 
-    await removeNonRefScreenshots({ dir, filter })
+    await removeNonRefScreenshots({ dir, filter, ignore })
 
     browser = useConnect ? await puppeteer.connect(connectOptions) : await puppeteer.launch(launchOptions)
     const page = await browser.newPage()
@@ -86,7 +99,7 @@ async function test (partialOptions) {
       })
       progress.start()
       await page.setViewport(viewports[viewport])
-      const previews = await getPreviews(page, { url, filter, viewport, navigationOptions })
+      const previews = await getPreviews(page, { url, filter, ignore, viewport, navigationOptions })
       await takeNewScreenshotsOfPreviews(page, previews, { dir, progress, navigationOptions, wait })
       progress.stop()
     }

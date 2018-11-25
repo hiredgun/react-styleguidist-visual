@@ -10,8 +10,7 @@ yargs
   .command('approve', 'Approve all new screenshots.', approveArgs, approveCommand)
   .demandCommand()
   .help()
-  .wrap(null)
-  .argv
+  .wrap(null).argv
 
 function testArgs (yargs) {
   yargs
@@ -27,6 +26,10 @@ function testArgs (yargs) {
     .option('filter', {
       type: 'array',
       description: 'Only collect screenshots for these components'
+    })
+    .option('ignore', {
+      type: 'array',
+      description: 'Do not collect screenshots for these components'
     })
     .option('threshold', {
       type: 'number',

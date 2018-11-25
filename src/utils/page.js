@@ -6,22 +6,28 @@ const { debug } = require('./debug')
 
 const ensureDir = promisify(fs.ensureDir)
 
-async function getPreviews (page, { url, filter, viewport, navigationOptions }) {
+async function getPreviews (page, { url, filter, ignore, viewport, navigationOptions }) {
   await goToUrl(page, url, navigationOptions)
+  console.log('filetrer   ', ignore)
 
-  return page.evaluate(getPreviewsInPage, { filter, viewport })
+  return page.evaluate(getPreviewsInPage, { filter, ignore, viewport })
 }
 
-function getPreviewsInPage ({ filter, viewport }) {
+function getPreviewsInPage ({ filter, ignore, viewport }) {
   const shouldIncludePreview = name => {
-    if (filter == null) {
-      return true
-    }
-
-    return [].concat(filter).some(str => {
+    const test = str => {
       const regexp = new RegExp(str.toLowerCase())
       return regexp.test(name.toLowerCase())
-    })
+    }
+
+    if (filter) {
+      return filter.some(test)
+    }
+    if (Array.isArray(ignore) && ignore.length) {
+      return !ignore.some(test)
+    }
+
+    return true
   }
 
   const extractPreviewInfo = (memo, el) => {
@@ -89,11 +95,12 @@ async function takeNewScreenshotOfPreview (page, preview, index, actionState, { 
 
   await triggerAction(page, el, actionState)
 
-  const previewElement = preview.previewSelector ? await page.$(preview.previewSelector) : el
+  const boundingBoxEl = preview.previewSelector ? await page.$(preview.previewSelector) : el
+  const boundingBox = await boundingBoxEl.boundingBox()
 
   const path = await getRelativeFilepath(preview, index, actionState, dir)
   debug('Storing screenshot of %s in %s', chalk.blue(preview.name), chalk.cyan(path))
-  await previewElement.screenshot({ path })
+  await page.screenshot({ clip: boundingBox, path })
 }
 
 async function getRelativeFilepath (preview, index, actionState, dir) {
@@ -107,7 +114,9 @@ async function getRelativeFilepath (preview, index, actionState, dir) {
 }
 
 async function triggerAction (page, el, actionState) {
-  const actionEl = actionState.selector ? await el.$(actionState.selector) || await page.$(actionState.selector) : el
+  const actionEl = actionState.selector
+    ? (await el.$(actionState.selector)) || (await page.$(actionState.selector))
+    : el
   switch (actionState.action) {
     case 'hover':
       await actionEl.hover()
