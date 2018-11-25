@@ -8,8 +8,6 @@ const ensureDir = promisify(fs.ensureDir)
 
 async function getPreviews (page, { url, filter, ignore, viewport, navigationOptions }) {
   await goToUrl(page, url, navigationOptions)
-  console.log('filetrer   ', ignore)
-
   return page.evaluate(getPreviewsInPage, { filter, ignore, viewport })
 }
 

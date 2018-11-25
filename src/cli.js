@@ -27,10 +27,6 @@ function testArgs (yargs) {
       type: 'array',
       description: 'Only collect screenshots for these components'
     })
-    .option('ignore', {
-      type: 'array',
-      description: 'Do not collect screenshots for these components'
-    })
     .option('threshold', {
       type: 'number',
       description: 'Threshold for visual diffing'
