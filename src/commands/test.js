@@ -1,4 +1,6 @@
 const joi = require('joi')
+const fs = require('fs')
+const path = require('path')
 const puppeteer = require('puppeteer')
 const { getOptions } = require('../utils/options')
 const {
@@ -74,7 +76,6 @@ async function test (partialOptions) {
   try {
     const options = await getOptions(partialOptions, testDefaults, testSchema)
     const {
-      url,
       dir,
       filter,
       ignore,
@@ -85,6 +86,22 @@ async function test (partialOptions) {
       connectOptions,
       navigationOptions
     } = options
+
+    let { url } = options
+    let entry
+    try {
+      entry = new URL(url)
+    } catch (err) {
+      if (!path.isAbsolute(url)) {
+        url = path.resolve(url)
+      }
+
+      if (fs.lstatSync(url).isFile()) {
+        entry = new URL(`file:///${url}`)
+      } else {
+        throw new Error('Invalid URL arg was provided')
+      }
+    }
 
     await removeNonRefScreenshots({ dir, filter, ignore })
 
@@ -99,7 +116,7 @@ async function test (partialOptions) {
       })
       progress.start()
       await page.setViewport(viewports[viewport])
-      const previews = await getPreviews(page, { url, filter, ignore, viewport, navigationOptions })
+      const previews = await getPreviews(page, { url: entry.href, filter, ignore, viewport, navigationOptions })
       await takeNewScreenshotsOfPreviews(page, previews, { dir, progress, navigationOptions, wait })
       progress.stop()
     }
