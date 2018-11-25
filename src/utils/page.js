@@ -89,12 +89,11 @@ async function takeNewScreenshotOfPreview (page, preview, index, actionState, { 
 
   await triggerAction(page, el, actionState)
 
-  const boundingBoxEl = preview.previewSelector ? await page.$(preview.previewSelector) : el
-  const boundingBox = await boundingBoxEl.boundingBox()
+  const previewElement = preview.previewSelector ? await page.$(preview.previewSelector) : el
 
   const path = await getRelativeFilepath(preview, index, actionState, dir)
   debug('Storing screenshot of %s in %s', chalk.blue(preview.name), chalk.cyan(path))
-  await page.screenshot({ clip: boundingBox, path })
+  await previewElement.screenshot({ path })
 }
 
 async function getRelativeFilepath (preview, index, actionState, dir) {
